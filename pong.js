@@ -21,7 +21,7 @@ function Vector2(x, y)
 
 }
 
-/*Checks for keyboard input and stores whether the keys w, s, up or down are being pressed,
+/*Input() Checks for keyboard input and stores whether the keys w, s, up or down are being pressed,
 this allows actions outside of here to be called if those keys are pressed. Uses the keydown 
 object declared at the top of the js file.*/
 function Input()
