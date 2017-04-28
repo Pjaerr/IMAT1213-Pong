@@ -9,3 +9,26 @@ canvas{
 	border: 1px solid #000;
 	background-color: #353535;
 }
+#heading
+{
+	text-align: center;
+}
+#player1
+{
+	float: left;
+}
+#player2
+{
+	float: right;
+}
+
+#player1score, #player2score
+{
+	font-weight: bold;
+	color: red;
+}
+
+#btn
+{
+	float: center;
+}

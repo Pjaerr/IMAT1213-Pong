@@ -1,3 +1,10 @@
+/*
+	There is a GameManager class at the bottom of the JS file that handles all of the loose game functions. These can be accessed via the
+	'game' instance. At the very top of the JS file there are the references, and the intially empty game objects such as walls, ball or paddles,
+	these are all intialised via the GameManager class using the initialiseObjects() function. Also at the top are some template functions to make
+	things easier such as a Vector2 class and an Input class.
+*/
+
 /*Prevents certain actions from being taken and throws more exceptions, useful for
 catching common erros brought on by bad coding practices or unsafe actions.*/
 "use strict";
@@ -18,12 +25,11 @@ function Vector2(x, y)
 {
 	this.x = x;
 	this.y = y;
-
 }
 
 /*Input() Checks for keyboard input and stores whether the keys w, s, up or down are being pressed,
-this allows actions outside of here to be called if those keys are pressed. Uses the keydown 
-object declared at the top of the js file.*/
+this allows actions outside of here to be called if those keys are pressed. Uses the keydown and
+ keyup event listeners to receive keyboard input.*/
 function Input()
 {
 	/*Stores key presses. Set to true/false in respective keydown/keyup functions.*/
@@ -88,19 +94,29 @@ window.addEventListener("keyup", function(e)	//Listen for a key being released.
 //Collision Detection
 function Collision()
 {
-	this.pointInRect = function(pointY, rect)
+	/*Point in rect function takes a point as a Vector (x, y) and a
+	rectangle by which to check the point. It returns true if the point
+	is within the rectangle.*/
+	this.pointInRect = function(point, rect)
 	{
-		return (pointY >= rect.pos.y && pointY <= rect.pos.y + rect.height);
+		return (point.x >= rect.pos.x && point.x <= rect.pos.x + rect.width && 
+			point.y >= rect.pos.y && point.y <= rect.pos.y + rect.height);
 	}
 }
 
 var col = new Collision();
 
 /*----------GAME OBJECTS----------*/
+var player = [];
+var ball;
+var wall = [];
+var winArea = [];
+
 //Paddle Constructor Function
 function Paddle(xPos, yPos)
 {
-	this.width = 10; //Paddle width in px.
+	this.score = 0;
+	this.width = 20; //Paddle width in px.
 	this.height = 80; //Paddle height in px.
 	this.movementSpeed;
 
@@ -116,18 +132,21 @@ Paddle.prototype.render = function()
 };
 Paddle.prototype.onCollisionEnter = function()
 {
-	if (col.pointInRect(this.pos.y, topWall))
+	/*Checks if the top of this paddle is within the top boundary*/
+	if (col.pointInRect(this.pos, wall[0]))
 	{
-		this.pos.y += this.movementSpeed;
+		this.pos.y += this.movementSpeed;	//Pushes the player down by it's movementSpeed. Ensuring it cannot move up.
 	}
-	else if (col.pointInRect(this.pos.y + this.height, bottomWall))
+	/*Checks if the bottom of this paddle is within the bottom boundary*/
+	else if (col.pointInRect(new Vector2(this.pos.x, this.pos.y + this.height), wall[1]))
 	{
-		this.pos.y -= this.movementSpeed;
+		this.pos.y -= this.movementSpeed;	//Pushes the player up by it's movementSpeed. Ensuring it cannot move down.
 	}
 };
 Paddle.prototype.move = function(direction, timeElapsed)
 {
-	this.movementSpeed = 500 * timeElapsed;
+	this.movementSpeed = 600 * timeElapsed;	//Setting movementSpeed to an abritary value multiplied by delta time.
+
 	this.onCollisionEnter();
 
 	if (direction == "up")
@@ -141,6 +160,10 @@ Paddle.prototype.move = function(direction, timeElapsed)
 		this.pos.y += this.movementSpeed;
 	}
 };
+Paddle.prototype.reset = function()
+{
+	this.pos = new Vector2(this.pos.x, (height * 0.5) - (this.height / 2));
+};
 
 //Ball Constructor Function
 function Ball(startingVelocity, radius)
@@ -148,11 +171,77 @@ function Ball(startingVelocity, radius)
 	/*Ball speed on the x and y axis as a vector.*/
 	this.velocity = startingVelocity;
 
+	this.increaseAmt = 20; //Amount to speed up the ball by.
+
 	this.radius = radius; //Radius in px.
 
 	/*Ball x and y positions as a vector.*/
-	this.pos = new Vector2(width * 0.5, height * 0.5)
+	this.pos = new Vector2(width * 0.5, height * 0.5);
+
+	this.onCollisionEnter = function()
+	{
+		/*Checks to see if the ball is colliding with the paddles and if so,
+		it reverses the ball's X velocity and gives it the Y velocity of the paddle
+		it collided with.*/
+		if (col.pointInRect(new Vector2(this.pos.x + this.radius, this.pos.y), player[1]))
+		{
+			this.velocity.x = -this.velocity.x + -this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
+			this.velocity.y = player[1].pos.y;
+		}
+		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), player[0]))
+		{
+			this.velocity.x = this.velocity.x * -1 + this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
+			this.velocity.y = player[0].pos.y;
+		}
+		/*Check if the ball is colliding with the winAreas behind the paddles
+		and if so, call the game.pointScored function, passing in the number of
+		the player opposite to the goal that was collided with*/
+		else if (col.pointInRect(new Vector2(this.pos.x + this.radius, this.pos.y), winArea[1]))
+		{
+			game.pointScored(1);
+		}
+		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), winArea[0]))
+		{
+			game.pointScored(2);
+		}
+		
+		/*Checks for collision with the boundaries, if so, reverses Y velocity.*/
+		if (col.pointInRect(new Vector2(this.pos.x, this.pos.y - this.radius), wall[0]))
+		{
+			this.velocity.y = -this.velocity.y;
+		}
+		else if (col.pointInRect(new Vector2(this.pos.x, this.pos.y + this.radius), wall[1]))
+		{
+			this.velocity.y = this.velocity.y * -1;
+		}
+	}
+	this.move = function(timeElapsed)
+	{
+		/*Changes the ball's x and y positions by its velocity multiplied by the timeElapsed in the last
+		frame. (delta time).*/
+		this.pos.x += this.velocity.x * timeElapsed;
+		this.pos.y += this.velocity.y * timeElapsed;
+
+		/*Checks if the velocity is going over a certain speed. If so it keeps it within that speed.
+		This stops any stray mishaps with collision due to the ball going exceedingly fast.*/
+		if (this.velocity.x >= 1200)
+		{
+			this.increaseAmt = -20;
+		}
+		else if(this.velocity.x <= 1100)
+		{
+			this.increaseAmt = 20;
+		}
+
+		this.onCollisionEnter();	//Checks for collision at the end of each movement check.
+	}
 }
+/*Function used to reset the ball*/
+Ball.prototype.reset = function(dir)
+{
+	this.pos = new Vector2(width * 0.5, height * 0.5);
+	this.velocity = new Vector2(300 * dir, 0);
+};
 //Function to draw the Ball.
 Ball.prototype.render = function()
 {
@@ -173,50 +262,6 @@ Boundaries.prototype.render = function()
 	ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height); //Create Boundary.
 }
 
-//Initialising the objects.
-var player1;
-var player2;
-var ball;
-var topWall;
-var bottomWall;
-function initialiseObjects()
-{
-	player1 = new Paddle(width * 0.01, 0);
-	player1.pos.y = (height * 0.5) - (player1.height / 2);
-
-	player2 = new Paddle(width * 0.99, 0);
-	player2.pos.y = (height * 0.5) - (player2.height / 2);
-
-	ball = new Ball(new Vector2(500, 0), 5);
-
-	topWall = new Boundaries(new Vector2(0, 0), width, 20);
-	bottomWall = new Boundaries(new Vector2(0, (height - 20)), width, 20);
-}
-initialiseObjects();
-
-
-
-function render()
-{
-	ctx.fillStyle = "#FFFFFF"; //Set the colour of the components within the canvas.
-	ctx.clearRect(0, 0, width, height); //Clear the canvas before drawing the next frame.
-	ctx.fillRect(width / 2, 0, 2, height);	//The "net" in the middle of the level.
-
-	//Draw the ball.
-	ball.render();
-
-	//Draw player one's paddle.
-	player1.render();
-
-	//Draw player two's paddle.
-	player2.render();
-
-	//Draw the level boundaries.
-	topWall.render();
-	bottomWall.render();
-
-}
-
 /*This function checks if the variables inside of the keydown object
 are true and calls the relevant move function if they are. This function does not
 check for any input.*/
@@ -224,81 +269,157 @@ function movePaddles(timeElapsed)
 {
 	if(input.keyboard.w)
 	{
-		player1.move("up", timeElapsed);
+		player[0].move("up", timeElapsed);
 	}
 	else if (input.keyboard.s)
 	{
-		player1.move("down", timeElapsed);
+		player[0].move("down", timeElapsed);
 	}
 	if (input.keyboard.uparrow)
 	{
-		player2.move("up", timeElapsed);
+		player[1].move("up", timeElapsed);
 	}
 	else if (input.keyboard.downarrow)
 	{
-		player2.move("down", timeElapsed);
+		player[1].move("down", timeElapsed);
 	}
 }
 
-Collision.prototype.circleInRect = function(point, rect)
-{
-	return (point.x >= rect.pos.x && point.x <= rect.pos.x + rect.width && 
-			point.y >= rect.pos.y && point.y <= rect.pos.y + rect.height);
-}
-
-Ball.prototype.move = function(timeElapsed)
-{
-	this.pos.x += this.velocity.x * timeElapsed;
-	this.pos.y += this.velocity.y * timeElapsed;
-
-	if (col.circleInRect(this.pos, player2))
-	{
-		this.velocity.x = -this.velocity.x + -20;
-		this.velocity.y = player2.pos.y;
-	}
-	else if (col.circleInRect(this.pos, player1))
-	{
-		this.velocity.x = this.velocity.x * -1 + 20;
-		this.velocity.y = player1.pos.y;
-	}
-	
-	if (col.circleInRect(this.pos, topWall))
-	{
-		this.velocity.y = -this.velocity.y;
-	}
-	else if (col.circleInRect(this.pos, bottomWall))
-	{
-		this.velocity.y = this.velocity.y * -1;
-	}
-}
 /*----------EVENT AND GAME LOOP FUNCTIONS----------*/
-//Used to update objects by the time.
-function update(timeElapsed)
+function GameManager()
 {
-	movePaddles(timeElapsed);
-	ball.move(timeElapsed);
+	this.gameOver = false;
 
-	// TODO: Update ball position based on time elapsed
-	// TODO: Bounce the ball of top and bottom rectangles
-  	// TODO: Record score and reset if ball goes passed the left or right paddle
-  	// TODO: Bounce the ball off the paddle
+	/*Defines the game objects declared at the top of the JS file and gives
+	them starting sizes and positions.*/
+	this.initialiseObjects = function()	
+	{
+		player[0] = new Paddle(20, 0);
+		player[0].pos.y = (height * 0.5) - (player[0].height / 2);
+
+		player[1] = new Paddle(width - 40, 0);
+		player[1].pos.y = (height * 0.5) - (player[1].height / 2);
+
+		ball = new Ball(new Vector2(300, 0), 5);
+
+		wall[0] = new Boundaries(new Vector2(0, 0), width, 20);
+		wall[1] = new Boundaries(new Vector2(0, (height - 20)), width, 20);
+
+		winArea[0] = new Boundaries(new Vector2(-30, 0), 10, height);
+		winArea[1] = new Boundaries(new Vector2(width + 15, 0), 10, height);
+	}
+	this.resetObjects = function(dir)
+	{	
+		for(var i = 0; i < player.length; i++)
+		{
+			player[i].reset();
+		}
+
+		ball.reset(dir);
+	}
+	this.updateScore = function(i)
+	{
+		var elementid = "player" + (i + 1) + "score";
+		document.getElementById(elementid).innerHTML = player[i].score;	//Update the score text on the HTML page.
+	}
+	/*Increments the score value of the player who has scored. This is detmined via the function call
+	and the paddle number that is passed in. The ball's initial velocity will be multiplied by the
+	direction, causing it to go the opposite way from the player that has just scored.*/
+	this.pointScored = function(paddle)
+	{
+		console.log("Player " + paddle + " Scored!");
+		var direction;
+		switch(paddle)
+		{
+			case 1:
+				player[0].score++;
+				this.updateScore(0);
+				direction = 1;
+				break;
+			case 2:
+				player[1].score++;
+				this.updateScore(1);
+				direction = -1;
+				break;
+		}
+
+		/*If a player reaches 5 points, set gameOver to true and show that they have one in the html document.*/
+		for (var i = 0; i < player.length; i++)
+		{
+			if (player[i].score >= 5)
+			{
+				this.gameOver = true;
+				document.getElementById("heading").innerHTML = "PLAYER " + (i + 1) + " HAS WON!</br><button id='btn' type='button' onclick='restartGame()'> Restart Game!</button>";
+			}
+		}
+
+		this.resetObjects(direction)
+	}
+	//Used to update objects by the time.
+	this.update = function(timeElapsed)
+	{
+		movePaddles(timeElapsed);
+		ball.move(timeElapsed);
+	}
+	this.render = function()
+	{
+		ctx.fillStyle = "#FFFFFF"; //Set the colour of the components within the canvas.
+		ctx.clearRect(0, 0, width, height); //Clear the canvas before drawing the next frame.
+		ctx.fillRect(width / 2, 0, 2, height);	//The "net" in the middle of the level.
+
+		//Draw the ball.
+		ball.render();
+
+		//Draw player one's paddle.
+		player[0].render();
+
+		//Draw player two's paddle.
+		player[1].render();
+
+		//Draw the level boundaries.
+		wall[0].render();
+		wall[1].render();
+	}
 }
+var game = new GameManager();
+
+game.initialiseObjects();
 
 //Game Loop
 var previous; 
 function game_loop(timestamp)
 {
-	/*If there is no previous time, start with no elapsed time.*/
-	if (!previous) previous = timestamp;
+	if(game.gameOver)
+	{
+		timeElapsed = 0;
+	}
+	else 
+	{
+		/*If there is no previous time, start with no elapsed time.*/
+		if (!previous) previous = timestamp;
 
-  	var timeElapsed = (timestamp - previous) / 1000;  //Work out the elapsed time.
+		var timeElapsed = (timestamp - previous) / 1000;  //Work out the elapsed time.
+	}
+	
 	  
-  	update(timeElapsed); //Update the game based on elapsed time.
+  	game.update(timeElapsed); //Update the game based on elapsed time.
   	 	
-  	render();	//Renders the game.
-	  
+  	game.render();	//Renders the game.
+	
   	previous = timestamp;  //set the previous timestamp ready for next time
   	requestAnimationFrame(game_loop); //Recursively calls the game loop every animation frame when the browser is ready.
 }
 
 requestAnimationFrame(game_loop); //Initial call of the Game Loop.
+
+function restartGame()
+{
+	game.gameOver = false;
+	document.getElementById("heading").innerHTML = "Pong by Joshua Jackson [p16179167]";
+
+	for(var i = 0; i < player.length; i++)
+	{
+		player[i].score = 0;
+		game.updateScore(i);
+	}
+}
