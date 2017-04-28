@@ -109,9 +109,10 @@ function Collision()
 var col = new Collision();
 
 /*----------GAME OBJECTS----------*/
-var player = [];
-var ball;
-var wall = [];
+/*The game objects, all initialised in GameManager.initialiseObjects.*/
+var player = [];	
+var ball;			
+var wall = [];		
 var winArea = [];
 
 //Paddle Constructor Function
@@ -189,13 +190,13 @@ function Ball(startingVelocity, radius)
 		if (col.pointInRect(new Vector2(this.pos.x + this.radius, this.pos.y), player[1]))
 		{
 			this.velocity.x = -this.velocity.x + -this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
-			this.velocity.y = player[1].pos.y;
+			this.velocity.y = (player[1].pos.y + height) / 2;
 			paddleHitSound.play();
 		}
 		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), player[0]))
 		{
 			this.velocity.x = this.velocity.x * -1 + this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
-			this.velocity.y = player[0].pos.y;
+			this.velocity.y = (player[0].pos.y +  height) / 2;
 			paddleHitSound.play();
 		}
 		/*Check if the ball is colliding with the winAreas behind the paddles
@@ -229,7 +230,7 @@ function Ball(startingVelocity, radius)
 
 		/*Checks if the velocity is going over a certain speed. If so it keeps it within that speed.
 		This stops any stray mishaps with collision due to the ball going exceedingly fast.*/
-		if (this.velocity.x >= 820)
+		if (this.velocity.x >= 750)
 		{
 			this.increaseAmt = -20;
 		}
