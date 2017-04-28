@@ -93,7 +93,7 @@ window.addEventListener("keyup", function(e)	//Listen for a key being released.
 	input.keyUp(e);
 }); 
 
-//Collision Detection
+//Collision Detection Class
 function Collision()
 {
 	/*Point in rect function takes a point as a Vector (x, y) and a
@@ -106,7 +106,7 @@ function Collision()
 	}
 }
 
-var col = new Collision();
+var col = new Collision();	//Instance of Collision so that the functions can be used externally.
 
 /*----------GAME OBJECTS----------*/
 /*The game objects, all initialised in GameManager.initialiseObjects.*/
@@ -151,7 +151,7 @@ Paddle.prototype.move = function(direction, timeElapsed)
 {
 	this.movementSpeed = 600 * timeElapsed;	//Setting movementSpeed to an abritary value multiplied by delta time.
 
-	this.onCollisionEnter();
+	this.onCollisionEnter();	//Checks for collision.
 
 	if (direction == "up")
 	{
@@ -186,17 +186,18 @@ function Ball(startingVelocity, radius)
 	{
 		/*Checks to see if the ball is colliding with the paddles and if so,
 		it reverses the ball's X velocity and gives it the Y velocity of the paddle
-		it collided with.*/
+		it collided with. Carries out a point in rect collision, making the point from
+		the centre of the circle going out by radius so that the collision check occurs to the edge of the circle.*/
 		if (col.pointInRect(new Vector2(this.pos.x + this.radius, this.pos.y), player[1]))
 		{
 			this.velocity.x = -this.velocity.x + -this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
-			this.velocity.y = (player[1].pos.y + height) / 2;
+			this.velocity.y = player[1].pos.y;
 			paddleHitSound.play();
 		}
 		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), player[0]))
 		{
 			this.velocity.x = this.velocity.x * -1 + this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
-			this.velocity.y = (player[0].pos.y +  height) / 2;
+			this.velocity.y = player[0].pos.y;
 			paddleHitSound.play();
 		}
 		/*Check if the ball is colliding with the winAreas behind the paddles
@@ -230,11 +231,11 @@ function Ball(startingVelocity, radius)
 
 		/*Checks if the velocity is going over a certain speed. If so it keeps it within that speed.
 		This stops any stray mishaps with collision due to the ball going exceedingly fast.*/
-		if (this.velocity.x >= 750)
+		if (this.velocity.x >= 700)
 		{
 			this.increaseAmt = -20;
 		}
-		else if(this.velocity.x <= 700)
+		else if(this.velocity.x <= 600)
 		{
 			this.increaseAmt = 20;
 		}
@@ -269,9 +270,9 @@ Boundaries.prototype.render = function()
 	ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height); //Create Boundary.
 }
 
-/*This function checks if the variables inside of the keydown object
+/*This function checks if the variables inside of the keyboard object
 are true and calls the relevant move function if they are. This function does not
-check for any input.*/
+check for any input directly.*/
 function movePaddles(timeElapsed)
 {
 	if(input.keyboard.w)
@@ -329,7 +330,7 @@ function GameManager()
 		var elementid = "player" + (i + 1) + "score";
 		document.getElementById(elementid).innerHTML = player[i].score;	//Update the score text on the HTML page.
 	}
-	/*Increments the score value of the player who has scored. This is detmined via the function call
+	/*Increments the score value of the player who has scored. This is determined via the function call
 	and the paddle number that is passed in. The ball's initial velocity will be multiplied by the
 	direction, causing it to go the opposite way from the player that has just scored.*/
 	this.pointScored = function(paddle)
@@ -351,7 +352,7 @@ function GameManager()
 				break;
 		}
 
-		/*If a player reaches 5 points, set gameOver to true and show that they have one in the html document.*/
+		/*If a player reaches 5 points, set gameOver to true and show that they have won in the html document.*/
 		for (var i = 0; i < player.length; i++)
 		{
 			if (player[i].score >= 5)
@@ -366,8 +367,8 @@ function GameManager()
 	//Used to update objects by the time.
 	this.update = function(timeElapsed)
 	{
-		movePaddles(timeElapsed);
-		ball.move(timeElapsed);
+		movePaddles(timeElapsed);	//Goes through and passes timeElapsed to Paddle.
+		ball.move(timeElapsed);		//Passes timeElapsed to Ball.
 	}
 	this.render = function()
 	{
@@ -379,25 +380,23 @@ function GameManager()
 		//Draw the ball.
 		ball.render();
 
-		//Draw player one's paddle.
-		player[0].render();
-
-		//Draw player two's paddle.
-		player[1].render();
-
-		//Draw the level boundaries.
-		wall[0].render();
-		wall[1].render();
+		/*Draws the walls and the players.*/
+		for (var i = 0; i < player.length; i++)
+		{
+			player[i].render();
+			wall[i].render();
+		}
 	}
 }
 var game = new GameManager();
 
-game.initialiseObjects();
+game.initialiseObjects(); //Calls the initialiseObjects function, setting up the scene.
 
 //Game Loop
 var previous; 
 function game_loop(timestamp)
 {
+	/*If the game is over, stop all movement.*/
 	if(game.gameOver)
 	{
 		timeElapsed = 0;
