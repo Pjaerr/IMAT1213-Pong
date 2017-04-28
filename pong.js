@@ -15,6 +15,8 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 var width = canvas.width;
 var height = canvas.height;
+var paddleHitSound = new Audio("sounds/ping_pong_8bit_plop.ogg");
+var exitLevelSound = new Audio("sounds/ping_pong_8bit_peeeeeep.ogg");
 
 /*Ensures requestAnimationFrame works on all browsers.*/
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -128,6 +130,7 @@ Paddle.prototype.render = function()
 {
 	/*Create a rectangle at the paddle's x and y positions with the
 	paddles's width and height.*/
+	ctx.fillStyle = "#810000";
 	ctx.fillRect(this.pos.x, this.pos.y, this.width, this.height);
 };
 Paddle.prototype.onCollisionEnter = function()
@@ -187,20 +190,22 @@ function Ball(startingVelocity, radius)
 		{
 			this.velocity.x = -this.velocity.x + -this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
 			this.velocity.y = player[1].pos.y;
+			paddleHitSound.play();
 		}
 		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), player[0]))
 		{
 			this.velocity.x = this.velocity.x * -1 + this.increaseAmt;	//Slowly increase speed of ball on the X axis over time.
 			this.velocity.y = player[0].pos.y;
+			paddleHitSound.play();
 		}
 		/*Check if the ball is colliding with the winAreas behind the paddles
 		and if so, call the game.pointScored function, passing in the number of
 		the player opposite to the goal that was collided with*/
-		else if (col.pointInRect(new Vector2(this.pos.x + this.radius, this.pos.y), winArea[1]))
+		else if (col.pointInRect(this.pos, winArea[1]))
 		{
 			game.pointScored(1);
 		}
-		else if (col.pointInRect(new Vector2(this.pos.x - this.radius, this.pos.y), winArea[0]))
+		else if (col.pointInRect(this.pos, winArea[0]))
 		{
 			game.pointScored(2);
 		}
@@ -224,11 +229,11 @@ function Ball(startingVelocity, radius)
 
 		/*Checks if the velocity is going over a certain speed. If so it keeps it within that speed.
 		This stops any stray mishaps with collision due to the ball going exceedingly fast.*/
-		if (this.velocity.x >= 1200)
+		if (this.velocity.x >= 820)
 		{
 			this.increaseAmt = -20;
 		}
-		else if(this.velocity.x <= 1100)
+		else if(this.velocity.x <= 700)
 		{
 			this.increaseAmt = 20;
 		}
@@ -248,6 +253,7 @@ Ball.prototype.render = function()
 	ctx.beginPath();
 	/*Create a circle at the ball's x and y position with the ball's radius.*/
 	ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+	ctx.fillStyle = "#008000";
 	ctx.fill();
 };
 
@@ -327,6 +333,7 @@ function GameManager()
 	direction, causing it to go the opposite way from the player that has just scored.*/
 	this.pointScored = function(paddle)
 	{
+		exitLevelSound.play();
 		console.log("Player " + paddle + " Scored!");
 		var direction;
 		switch(paddle)
@@ -363,8 +370,9 @@ function GameManager()
 	}
 	this.render = function()
 	{
-		ctx.fillStyle = "#FFFFFF"; //Set the colour of the components within the canvas.
+		//ctx.fillStyle = "#FFFFFF"; //Set the colour of the components within the canvas.
 		ctx.clearRect(0, 0, width, height); //Clear the canvas before drawing the next frame.
+		ctx.fillStyle = "#008000";
 		ctx.fillRect(width / 2, 0, 2, height);	//The "net" in the middle of the level.
 
 		//Draw the ball.

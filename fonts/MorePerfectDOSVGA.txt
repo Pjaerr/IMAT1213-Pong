@@ -1,0 +1,4 @@
+The MorePerfectDOSVGA font is owned and shared by laemeur.sdf.org/fonts/
+
+More Perfect DOS VGA and Less Perfect DOS VGA are both free for all use, commercial and non-commercial. 
+IBM designed the glyphs and Zeh Fernando did most of the work converting them to TrueType, 

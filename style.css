@@ -1,4 +1,15 @@
+@font-face
+{
+	font-family: 'MorePerfectDOSVGA';
+	src: url('fonts/MorePerfectDOSVGA.ttf');
+}
 
+body
+{
+	font-family: 'MorePerfectDOSVGA', 'sans-serif';
+	color: #FFF;
+	background-color: #000;
+}
 h2{
 	text-align: center;
 }
@@ -6,8 +17,8 @@ h2{
 canvas{
 	display: block;
 	margin: auto;
-	border: 1px solid #000;
-	background-color: #353535;
+	border: 3px solid green;
+	background-color: #000;
 }
 #heading
 {
@@ -25,7 +36,7 @@ canvas{
 #player1score, #player2score
 {
 	font-weight: bold;
-	color: red;
+	color: green;
 }
 
 #btn
