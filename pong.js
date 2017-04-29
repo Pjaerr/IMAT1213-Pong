@@ -213,11 +213,11 @@ function Ball(startingVelocity, radius)
 		}
 		
 		/*Checks for collision with the boundaries, if so, reverses Y velocity.*/
-		if (col.pointInRect(new Vector2(this.pos.x, this.pos.y - this.radius), wall[0]))
+		if (col.pointInRect(new Vector2(this.pos.x, this.pos.y), wall[0]))
 		{
 			this.velocity.y = -this.velocity.y;
 		}
-		else if (col.pointInRect(new Vector2(this.pos.x, this.pos.y + this.radius), wall[1]))
+		else if (col.pointInRect(new Vector2(this.pos.x, this.pos.y), wall[1]))
 		{
 			this.velocity.y = this.velocity.y * -1;
 		}
@@ -255,7 +255,7 @@ Ball.prototype.render = function()
 	ctx.beginPath();
 	/*Create a circle at the ball's x and y position with the ball's radius.*/
 	ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-	ctx.fillStyle = "#008000";
+	ctx.fillStyle = "#39FF14";
 	ctx.fill();
 };
 
@@ -374,7 +374,7 @@ function GameManager()
 	{
 		//ctx.fillStyle = "#FFFFFF"; //Set the colour of the components within the canvas.
 		ctx.clearRect(0, 0, width, height); //Clear the canvas before drawing the next frame.
-		ctx.fillStyle = "#008000";
+		ctx.fillStyle = "#39FF14";
 		ctx.fillRect(width / 2, 0, 2, height);	//The "net" in the middle of the level.
 
 		//Draw the ball.

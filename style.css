@@ -17,7 +17,7 @@ h2{
 canvas{
 	display: block;
 	margin: auto;
-	border: 3px solid green;
+	border: 3px solid #39FF14;
 	background-color: #000;
 }
 #heading
@@ -36,7 +36,7 @@ canvas{
 #player1score, #player2score
 {
 	font-weight: bold;
-	color: green;
+	color: #39FF14;
 }
 
 #btn
